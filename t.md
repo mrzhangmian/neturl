@@ -88,12 +88,11 @@ graph TB
 
     subgraph "基础设施层 Infrastructure Layer"
         DB[(MySQL Database<br/>Coding项目数据<br/>任务/用户/团队/迭代)]
-        Cache[(Redis Cache<br/>缓存+消息队列<br/>A2A消息缓存)]
         SMTP[SMTP Server<br/>邮件服务<br/>批量发送+重试]
     end
 
     subgraph "外部服务 External Services"
-        阿里云百炼[Aliyun API<br/>AI分析能力<br/>Anthropic]
+        阿里云百炼[Aliyun API<br/>AI分析能力<br/>QWEN]
         Email[Email Client<br/>用户邮箱<br/>个人/Leader]
     end
 
@@ -104,8 +103,8 @@ graph TB
     A2A -->|调度| DA
     A2A -.->|未来调度| RA
 
-    IA -.->|并行协作| DA
-    DA -.->|请求成员数据| IA
+    DA -->|并行调用| IA
+    IA -->|返回成员数据| DA
 
     IA -->|MCP调用| MCP
     DA -->|MCP调用| MCP
@@ -122,10 +121,7 @@ graph TB
     T1 & T2 & T3 & T4 -->|查询| DB
     T5 & T6 & T7 -.->|查询| DB
 
-    MCP -->|缓存| Cache
-    A2A -->|消息队列| Cache
-
-    IA & DA & RA -.->|AI调用| Claude
+    IA & DA & RA -.->|AI调用| QWEN
 
     IA & DA -->|邮件推送| SMTP
     RA -.->|报告推送| SMTP
@@ -150,9 +146,8 @@ graph TB
     style T6 fill:#F5F5DC
     style T7 fill:#F5F5DC
     style DB fill:#87CEEB
-    style Cache fill:#FFA07A
     style SMTP fill:#FFA07A
-    style Claude fill:#FFD700
+    style QWEN fill:#FFD700
     style Email fill:#90EE90
 ```
 
@@ -479,18 +474,13 @@ flowchart TB
             DB[(MySQL
 Coding Data)]
         end
-
-        subgraph Redis Container
-            Cache[(Redis
-Cache + Queue)]
-        end
     end
 
     subgraph External
         SMTP[SMTP Server
 企业邮箱]
-        Claude[Claude API
-Anthropic]
+        QWEN[QWEN API
+阿里云百炼]
     end
 
     Scheduler --> Coordinator
@@ -501,19 +491,17 @@ Anthropic]
     Agent2 --> MCP
 
     MCP --> DB
-    MCP --> Cache
 
     Agent1 --> EmailSvc
     Agent2 --> EmailSvc
 
-    EmailSvc --> Cache
     EmailSvc --> SMTP
 
     SMTP --> User1
     SMTP --> Leader1
 
-    Agent1 --> Claude
-    Agent2 --> Claude
+    Agent1 --> QWEN
+    Agent2 --> QWEN
 
     style Scheduler fill:#87CEEB
     style Coordinator fill:#FFB6C1
@@ -522,9 +510,8 @@ Anthropic]
     style MCP fill:#F0E68C
     style EmailSvc fill:#FFA07A
     style DB fill:#87CEEB
-    style Cache fill:#FFA07A
     style SMTP fill:#90EE90
-    style Claude fill:#FFD700
+    style QWEN fill:#FFD700
 ```
 
 ## 8. 数据流转时序图
@@ -682,7 +669,7 @@ flowchart TB
   - 请求追踪（trace_id）
   - 失败重试机制
   - 并行/串行调度控制
-  - 消息持久化（Redis）
+  - 内存消息队列（轻量级）
 
 **A2A消息示例**:
 ```json
@@ -743,25 +730,21 @@ flowchart TB
 - **MySQL Database**:
   - Coding项目数据存储
   - 表结构：tasks、users、teams、iterations、test_cases、bugs
-
-- **Redis Cache**:
-  - 数据缓存（减少DB压力）
-  - 消息队列（A2A消息传递）
-  - 邮件发送队列
-  - 会话状态存储
+  - 所有业务数据的持久化存储
 
 - **SMTP Server**:
   - 邮件发送服务
   - 批量发送（20封/批）
   - 速率限制（100封/分钟）
   - 失败重试（最多3次）
+  - 支持HTML模板渲染
 
 ### 🌐 外部服务（External Services）
-- **Claude API** (Anthropic):
+- **阿里云百炼 - QWEN API**:
   - 提供AI分析能力
   - 自然语言生成
   - 数据洞察提取
-  - 建议生成
+  - 智能建议生成
 
 - **Email Client**:
   - 用户接收邮件的客户端
