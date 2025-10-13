@@ -1,110 +1,134 @@
 # DevOps Agent - 系统流程图
 
-## 1. MVP整体架构流程图
+## 1. MVP整体架构流程图（简化版）
 
 ```mermaid
-flowchart TB
-    Start([每天早上 06:00]) --> Scheduler["定时调度器
-    Cron Scheduler"]
+flowchart LR
+    Start([06:00 定时触发]) --> Scheduler[Cron调度器]
 
-    Scheduler --> GetUsers[获取活跃用户列表]
-    Scheduler --> GetTeams[获取团队列表]
+    Scheduler --> Fetch[获取用户/团队列表]
 
-    GetUsers --> Coordinator["Master Coordinator
-    任务协调器"]
-    GetTeams --> Coordinator
+    Fetch --> Process{批量处理}
 
-    Coordinator --> BatchIndividual{"批量处理
-    个人报告"}
-    Coordinator --> BatchTeam{"批量处理
-    团队报告"}
+    Process -->|个人报告| Individual[Individual Agent<br/>分析个人数据]
+    Process -->|团队报告| Dept[Department Agent<br/>聚合团队数据]
 
-    BatchIndividual -->|每批10个用户| IndividualAgent["Individual Analysis Agent
-    个人分析Agent"]
+    Individual --> MCP1[MCP Server<br/>get_user_tasks<br/>analyze_workload]
+    Dept --> MCP2[MCP Server<br/>get_team_tasks<br/>get_team_members]
 
-    IndividualAgent --> MCP1[MCP Server]
-    MCP1 --> GetUserTasks["get_user_tasks
-    获取昨日+今日任务"]
-    MCP1 --> AnalyzeWorkload["analyze_workload
-    分析工作负载"]
+    MCP1 --> DB[(MySQL<br/>Coding数据)]
+    MCP2 --> DB
 
-    GetUserTasks --> ProcessData1[数据分析处理]
-    AnalyzeWorkload --> ProcessData1
+    Individual --> Report1[生成个人<br/>站会报告]
+    Dept --> Report2[生成团队<br/>汇总报告]
 
-    ProcessData1 --> GenerateReport1["生成站会报告
-    StandupReport"]
+    Report1 --> Email1[邮件服务]
+    Report2 --> Email2[邮件服务]
 
-    GenerateReport1 --> EmailService1[邮件服务]
-    EmailService1 --> Template1["个人报告模板
-    individual-daily.hbs"]
-    Template1 --> SendEmail1["发送邮件到
-    user@cn.wilmar-intl.com"]
+    Email1 --> User1[📧 发送给个人<br/>user@company.com]
+    Email2 --> User2[📧 发送给Leader<br/>leader@company.com]
 
-    SendEmail1 --> LogEmail1[记录发送日志]
-
-    BatchTeam -->|并行处理| DeptAgent["Department Aggregator Agent
-    部门聚合Agent"]
-
-    DeptAgent --> MCP2[MCP Server]
-    MCP2 --> GetTeamMembers["get_team_members
-    获取团队成员"]
-    MCP2 --> GetTeamTasks["get_team_tasks
-    获取团队任务"]
-    MCP2 --> AnalyzeTeamWorkload["analyze_workload
-    团队工作负载"]
-
-    GetTeamMembers --> ParallelAnalysis["并行调用Individual Agent
-    获取每个成员详情"]
-    ParallelAnalysis --> IndividualAgent
-
-    GetTeamTasks --> AggregateData[聚合团队数据]
-    AnalyzeTeamWorkload --> AggregateData
-    ParallelAnalysis --> AggregateData
-
-    AggregateData --> CalcMetrics["计算团队指标
-    识别风险项"]
-    CalcMetrics --> GenerateReport2["生成团队汇总
-    DepartmentSummary"]
-
-    GenerateReport2 --> EmailService2[邮件服务]
-    EmailService2 --> Template2["Leader报告模板
-    leader-daily.hbs"]
-    Template2 --> SendEmail2["发送邮件到
-    leader@cn.wilmar-intl.com"]
-
-    SendEmail2 --> LogEmail2[记录发送日志]
-
-    LogEmail1 --> Complete{"全部任务
-    完成?"}
-    LogEmail2 --> Complete
-
-    Complete -->|是| Success["✓ 报告生成完成
-    约06:15"]
-    Complete -->|否| Retry{"重试次数
-    < 3?"}
-
-    Retry -->|是| Coordinator
-    Retry -->|否| Error["✗ 发送失败告警
-    通知管理员"]
-
-    Success --> End([结束])
-    Error --> End
+    User1 --> Done[✓ 完成 06:15]
+    User2 --> Done
 
     style Start fill:#90EE90
     style Scheduler fill:#87CEEB
-    style Coordinator fill:#FFB6C1
-    style IndividualAgent fill:#DDA0DD
-    style DeptAgent fill:#DDA0DD
+    style Process fill:#FFB6C1
+    style Individual fill:#DDA0DD
+    style Dept fill:#DDA0DD
     style MCP1 fill:#F0E68C
     style MCP2 fill:#F0E68C
-    style EmailService1 fill:#FFA07A
-    style EmailService2 fill:#FFA07A
-    style Success fill:#90EE90
-    style Error fill:#FF6B6B
-    style End fill:#D3D3D3
+    style DB fill:#87CEEB
+    style Email1 fill:#FFA07A
+    style Email2 fill:#FFA07A
+    style Done fill:#90EE90
 ```
 
-## 2. 个人报告生成详细流程
+## 2. 系统逻辑架构图
+
+```mermaid
+graph TB
+    subgraph "触发层 Trigger Layer"
+        Cron[定时调度器<br/>Cron Scheduler<br/>每天06:00]
+    end
+
+    subgraph "协调层 Coordination Layer"
+        Master[Master Coordinator<br/>任务协调与分发]
+    end
+
+    subgraph "Agent层 Agent Layer"
+        IA[Individual Agent<br/>个人数据分析]
+        DA[Department Agent<br/>团队数据聚合]
+        RA[Report Agent<br/>报告生成<br/>Phase 2]
+    end
+
+    subgraph "数据访问层 Data Access Layer"
+        MCP[MCP Server<br/>Model Context Protocol]
+
+        subgraph "MCP Tools"
+            T1[get_user_tasks]
+            T2[get_team_tasks]
+            T3[get_team_members]
+            T4[analyze_workload]
+        end
+    end
+
+    subgraph "基础设施层 Infrastructure Layer"
+        DB[(MySQL Database<br/>Coding项目数据)]
+        Cache[(Redis Cache<br/>缓存+队列)]
+        SMTP[SMTP Server<br/>邮件服务]
+    end
+
+    subgraph "外部服务 External Services"
+        Claude[Claude API<br/>AI分析能力]
+        Email[Email Client<br/>用户邮箱]
+    end
+
+    Cron -->|触发| Master
+    Master -->|调度| IA
+    Master -->|调度| DA
+    Master -.->|未来| RA
+
+    IA -->|调用| MCP
+    DA -->|调用| MCP
+    RA -.->|调用| MCP
+
+    MCP --> T1
+    MCP --> T2
+    MCP --> T3
+    MCP --> T4
+
+    T1 -->|查询| DB
+    T2 -->|查询| DB
+    T3 -->|查询| DB
+    T4 -->|查询| DB
+
+    MCP -->|缓存| Cache
+
+    IA -->|AI调用| Claude
+    DA -->|AI调用| Claude
+
+    IA -->|发送邮件| SMTP
+    DA -->|发送邮件| SMTP
+
+    SMTP -->|推送| Email
+
+    Cache -->|队列管理| SMTP
+
+    style Cron fill:#90EE90
+    style Master fill:#FFB6C1
+    style IA fill:#DDA0DD
+    style DA fill:#DDA0DD
+    style RA fill:#E0E0E0
+    style MCP fill:#F0E68C
+    style DB fill:#87CEEB
+    style Cache fill:#FFA07A
+    style SMTP fill:#FFA07A
+    style Claude fill:#FFD700
+    style Email fill:#90EE90
+```
+
+## 3. 个人报告生成详细流程
 
 ```mermaid
 flowchart LR
@@ -149,7 +173,7 @@ JSON]
     I --> J[HTML邮件]
     J --> K[Nodemailer
 SMTP发送]
-    K --> L[user@cn.wilmar-intl.com]
+    K --> L[ user@cn.wilmar-intl.com ]
 
     style B fill:#DDA0DD
     style D fill:#87CEEB
@@ -593,14 +617,56 @@ flowchart TB
 
 ## 图表说明
 
-1. **图1 - MVP整体架构流程图**: 展示从定时触发到邮件发送的完整流程
-2. **图2 - 个人报告生成详细流程**: Individual Agent的具体工作流程
-3. **图3 - 团队报告聚合流程**: Department Agent如何并行处理和聚合数据
-4. **图4 - MCP Server工具调用流程**: MCP如何处理工具调用并使用缓存
-5. **图5 - 邮件发送流程**: 包含队列、批量发送、重试机制
-6. **图6 - 定时任务调度详细流程**: Scheduler的完整执行过程
-7. **图7 - 系统部署架构**: Docker容器部署结构
-8. **图8 - 数据流转时序图**: 展示各组件间的交互时序
-9. **图9 - 错误处理流程**: 异常情况的处理逻辑
+### 核心架构图
+1. **图1 - MVP整体架构流程图（简化版）**: 扁平化设计，快速理解核心流程
+2. **图2 - 系统逻辑架构图**: 📐 **完整的分层架构**，展示各层职责和组件关系
+
+### 详细流程图
+3. **图3 - 个人报告生成详细流程**: Individual Agent的具体工作流程
+4. **图4 - 团队报告聚合流程**: Department Agent如何并行处理和聚合数据
+5. **图5 - MCP Server工具调用流程**: MCP如何处理工具调用并使用缓存
+6. **图6 - 邮件发送流程**: 包含队列、批量发送、重试机制
+7. **图7 - 定时任务调度详细流程**: Scheduler的完整执行过程
+
+### 部署与运维
+8. **图8 - 系统部署架构**: Docker容器部署结构
+9. **图9 - 数据流转时序图**: 展示各组件间的交互时序
+10. **图10 - 错误处理流程**: 异常情况的处理逻辑
+
+---
+
+## 架构层次说明
+
+基于图2的系统逻辑架构，整个系统分为5个层次：
+
+### 1️⃣ 触发层（Trigger Layer）
+- **Cron Scheduler**: 每天早上06:00自动触发任务
+
+### 2️⃣ 协调层（Coordination Layer）
+- **Master Coordinator**: 任务调度、Agent管理、结果聚合
+
+### 3️⃣ Agent层（Agent Layer）
+- **Individual Agent**: 个人数据分析（MVP）
+- **Department Agent**: 团队数据聚合（MVP）
+- **Report Agent**: 报告生成（Phase 2扩展）
+
+### 4️⃣ 数据访问层（Data Access Layer）
+- **MCP Server**: 统一的数据访问接口
+- **MCP Tools**:
+  - `get_user_tasks` - 获取用户任务
+  - `get_team_tasks` - 获取团队任务
+  - `get_team_members` - 获取团队成员
+  - `analyze_workload` - 分析工作负载
+
+### 5️⃣ 基础设施层（Infrastructure Layer）
+- **MySQL**: Coding项目数据存储
+- **Redis**: 缓存 + 消息队列
+- **SMTP**: 邮件发送服务
+
+### 🌐 外部服务（External Services）
+- **Claude API**: 提供AI分析能力
+- **Email Client**: 用户接收邮件的客户端
+
+---
 
 这些流程图可以直接在支持Mermaid的Markdown查看器中渲染，如GitHub、GitLab、VS Code等。
