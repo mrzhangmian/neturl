@@ -84,12 +84,7 @@ graph TB
         direction LR
         DB[(MySQL Database Coding项目数据)]
         SMTP[SMTP Server 邮件服务]
-    end
-
-    subgraph External["外部服务 External Services"]
-        direction LR
         QWEN[Aliyun API AI分析能力 QWEN]
-        EmailClient[Email Client 用户邮箱]
     end
 
     Cron -->|触发| Master
@@ -112,12 +107,13 @@ graph TB
     T1 & T2 & T3 & T4 -->|查询| DB
     T5 & T6 & T7 -.->|查询| DB
 
-    IA & DA & RA -.->|AI调用| QWEN
+    IA -->|AI调用| QWEN
+    DA -->|AI调用| QWEN
+    RA -.->|AI调用| QWEN
 
-    IA & DA -->|邮件推送| SMTP
+    IA -->|邮件推送| SMTP
+    DA -->|邮件推送| SMTP
     RA -.->|报告推送| SMTP
-
-    SMTP -->|发送| EmailClient
 
     IA -.- IA_Cap
     DA -.- DA_Cap
@@ -143,7 +139,6 @@ graph TB
     style DB fill:#87CEEB
     style SMTP fill:#FFA07A
     style QWEN fill:#FFD700
-    style EmailClient fill:#90EE90
 ```
 
 ## 3. 个人报告生成详细流程
