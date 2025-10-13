@@ -48,52 +48,48 @@ flowchart LR
 
 ```mermaid
 graph TB
-    subgraph "触发层 Trigger Layer"
-        Cron[定时调度器<br/>Cron Scheduler<br/>每天06:00]
+    subgraph Trigger["触发层 Trigger Layer"]
+        Cron[定时调度器 Cron Scheduler 每天06:00]
     end
 
-    subgraph "协调层 Coordination Layer - A2A Protocol"
-        Master[Master Coordinator<br/>任务协调与分发<br/>Agent间通信管理]
-        A2A[A2A协议层<br/>Agent-to-Agent<br/>消息路由/追踪/重试]
+    subgraph Coordination["协调层 Coordination Layer - A2A Protocol"]
+        Master[Master Coordinator 任务协调与分发]
+        A2A[A2A协议层 消息路由/追踪/重试]
     end
 
-    subgraph "Agent层 Agent Layer"
-        IA[Individual Agent<br/>个人数据分析<br/>✅ MVP]
-        DA[Department Agent<br/>团队数据聚合<br/>✅ MVP]
-        RA[Report Agent<br/>迭代测试报告<br/>📋 Phase 2]
+    subgraph AgentLayer["Agent层 Agent Layer"]
+        direction LR
+        IA[Individual Agent 个人数据分析 ✅MVP]
+        DA[Department Agent 团队数据聚合 ✅MVP]
+        RA[Report Agent 迭代测试报告 📋Phase2]
 
-        subgraph "Agent能力"
-            IA_Cap[昨日工作分析<br/>今日计划生成<br/>风险识别]
-            DA_Cap[成员数据聚合<br/>团队指标计算<br/>异常预警]
-            RA_Cap[测试用例统计<br/>缺陷分析<br/>质量评分]
-        end
+        IA_Cap[昨日工作分析 今日计划生成 风险识别]
+        DA_Cap[成员数据聚合 团队指标计算 异常预警]
+        RA_Cap[测试用例统计 缺陷分析 质量评分]
     end
 
-    subgraph "数据访问层 Data Access Layer - MCP"
-        MCP[MCP Server<br/>Model Context Protocol<br/>统一数据访问接口]
+    subgraph DataAccess["数据访问层 Data Access Layer - MCP"]
+        MCP[MCP Server Model Context Protocol 统一数据访问接口]
 
-        subgraph "MCP Tools - MVP"
-            T1[get_user_tasks<br/>获取用户任务]
-            T2[get_team_tasks<br/>获取团队任务]
-            T3[get_team_members<br/>获取团队成员]
-            T4[analyze_workload<br/>工作负载分析]
-        end
-
-        subgraph "MCP Tools - Phase 2"
-            T5[get_iteration_data<br/>获取迭代数据]
-            T6[get_test_cases<br/>获取测试用例]
-            T7[get_bugs<br/>获取缺陷数据]
-        end
+        T1[get_user_tasks 获取用户任务]
+        T2[get_team_tasks 获取团队任务]
+        T3[get_team_members 获取团队成员]
+        T4[analyze_workload 工作负载分析]
+        T5[get_iteration_data 获取迭代数据]
+        T6[get_test_cases 获取测试用例]
+        T7[get_bugs 获取缺陷数据]
     end
 
-    subgraph "基础设施层 Infrastructure Layer"
-        DB[(MySQL Database<br/>Coding项目数据<br/>任务/用户/团队/迭代)]
-        SMTP[SMTP Server<br/>邮件服务<br/>批量发送+重试]
+    subgraph Infrastructure["基础设施层 Infrastructure Layer"]
+        direction LR
+        DB[(MySQL Database Coding项目数据)]
+        SMTP[SMTP Server 邮件服务]
     end
 
-    subgraph "外部服务 External Services"
-        阿里云百炼[Aliyun API<br/>AI分析能力<br/>QWEN]
-        Email[Email Client<br/>用户邮箱<br/>个人/Leader]
+    subgraph External["外部服务 External Services"]
+        direction LR
+        QWEN[Aliyun API AI分析能力 QWEN]
+        EmailClient[Email Client 用户邮箱]
     end
 
     Cron -->|触发| Master
@@ -110,13 +106,8 @@ graph TB
     DA -->|MCP调用| MCP
     RA -.->|MCP调用| MCP
 
-    MCP --> T1
-    MCP --> T2
-    MCP --> T3
-    MCP --> T4
-    MCP -.-> T5
-    MCP -.-> T6
-    MCP -.-> T7
+    MCP --> T1 & T2 & T3 & T4
+    MCP -.-> T5 & T6 & T7
 
     T1 & T2 & T3 & T4 -->|查询| DB
     T5 & T6 & T7 -.->|查询| DB
@@ -126,7 +117,7 @@ graph TB
     IA & DA -->|邮件推送| SMTP
     RA -.->|报告推送| SMTP
 
-    SMTP -->|发送| Email
+    SMTP -->|发送| EmailClient
 
     IA -.- IA_Cap
     DA -.- DA_Cap
@@ -142,13 +133,17 @@ graph TB
     style DA_Cap fill:#F0E6FF
     style RA_Cap fill:#F5F5F5
     style MCP fill:#F0E68C
+    style T1 fill:#FFF8DC
+    style T2 fill:#FFF8DC
+    style T3 fill:#FFF8DC
+    style T4 fill:#FFF8DC
     style T5 fill:#F5F5DC
     style T6 fill:#F5F5DC
     style T7 fill:#F5F5DC
     style DB fill:#87CEEB
     style SMTP fill:#FFA07A
     style QWEN fill:#FFD700
-    style Email fill:#90EE90
+    style EmailClient fill:#90EE90
 ```
 
 ## 3. 个人报告生成详细流程
