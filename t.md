@@ -4,68 +4,88 @@
 
 ```mermaid
 flowchart TB
-    Start([每天早上 06:00]) --> Scheduler[定时调度器<br/>Cron Scheduler]
+    Start([每天早上 06:00]) --> Scheduler["定时调度器
+    Cron Scheduler"]
 
     Scheduler --> GetUsers[获取活跃用户列表]
     Scheduler --> GetTeams[获取团队列表]
 
-    GetUsers --> Coordinator[Master Coordinator<br/>任务协调器]
+    GetUsers --> Coordinator["Master Coordinator
+    任务协调器"]
     GetTeams --> Coordinator
 
-    Coordinator --> BatchIndividual{批量处理<br/>个人报告}
-    Coordinator --> BatchTeam{批量处理<br/>团队报告}
+    Coordinator --> BatchIndividual{"批量处理
+    个人报告"}
+    Coordinator --> BatchTeam{"批量处理
+    团队报告"}
 
-    %% 个人报告流程
-    BatchIndividual -->|每批10个用户| IndividualAgent[Individual Analysis Agent<br/>个人分析Agent]
+    BatchIndividual -->|每批10个用户| IndividualAgent["Individual Analysis Agent
+    个人分析Agent"]
 
     IndividualAgent --> MCP1[MCP Server]
-    MCP1 --> GetUserTasks[get_user_tasks<br/>获取昨日+今日任务]
-    MCP1 --> AnalyzeWorkload[analyze_workload<br/>分析工作负载]
+    MCP1 --> GetUserTasks["get_user_tasks
+    获取昨日+今日任务"]
+    MCP1 --> AnalyzeWorkload["analyze_workload
+    分析工作负载"]
 
     GetUserTasks --> ProcessData1[数据分析处理]
     AnalyzeWorkload --> ProcessData1
 
-    ProcessData1 --> GenerateReport1[生成站会报告<br/>StandupReport]
+    ProcessData1 --> GenerateReport1["生成站会报告
+    StandupReport"]
 
     GenerateReport1 --> EmailService1[邮件服务]
-    EmailService1 --> Template1[个人报告模板<br/>individual-daily.hbs]
-    Template1 --> SendEmail1[发送邮件到<br/>user@company.com]
+    EmailService1 --> Template1["个人报告模板
+    individual-daily.hbs"]
+    Template1 --> SendEmail1["发送邮件到
+    user@company.com"]
 
     SendEmail1 --> LogEmail1[记录发送日志]
 
-    %% 团队报告流程
-    BatchTeam -->|并行处理| DeptAgent[Department Aggregator Agent<br/>部门聚合Agent]
+    BatchTeam -->|并行处理| DeptAgent["Department Aggregator Agent
+    部门聚合Agent"]
 
     DeptAgent --> MCP2[MCP Server]
-    MCP2 --> GetTeamMembers[get_team_members<br/>获取团队成员]
-    MCP2 --> GetTeamTasks[get_team_tasks<br/>获取团队任务]
-    MCP2 --> AnalyzeTeamWorkload[analyze_workload<br/>团队工作负载]
+    MCP2 --> GetTeamMembers["get_team_members
+    获取团队成员"]
+    MCP2 --> GetTeamTasks["get_team_tasks
+    获取团队任务"]
+    MCP2 --> AnalyzeTeamWorkload["analyze_workload
+    团队工作负载"]
 
-    GetTeamMembers --> ParallelAnalysis[并行调用Individual Agent<br/>获取每个成员详情]
+    GetTeamMembers --> ParallelAnalysis["并行调用Individual Agent
+    获取每个成员详情"]
     ParallelAnalysis --> IndividualAgent
 
     GetTeamTasks --> AggregateData[聚合团队数据]
     AnalyzeTeamWorkload --> AggregateData
     ParallelAnalysis --> AggregateData
 
-    AggregateData --> CalcMetrics[计算团队指标<br/>识别风险项]
-    CalcMetrics --> GenerateReport2[生成团队汇总<br/>DepartmentSummary]
+    AggregateData --> CalcMetrics["计算团队指标
+    识别风险项"]
+    CalcMetrics --> GenerateReport2["生成团队汇总
+    DepartmentSummary"]
 
     GenerateReport2 --> EmailService2[邮件服务]
-    EmailService2 --> Template2[Leader报告模板<br/>leader-daily.hbs]
-    Template2 --> SendEmail2[发送邮件到<br/>leader@company.com]
+    EmailService2 --> Template2["Leader报告模板
+    leader-daily.hbs"]
+    Template2 --> SendEmail2["发送邮件到
+    leader@company.com"]
 
     SendEmail2 --> LogEmail2[记录发送日志]
 
-    %% 完成
-    LogEmail1 --> Complete{全部任务<br/>完成?}
+    LogEmail1 --> Complete{"全部任务
+    完成?"}
     LogEmail2 --> Complete
 
-    Complete -->|是| Success[✓ 报告生成完成<br/>约06:15]
-    Complete -->|否| Retry{重试次数<br/>&lt;3?}
+    Complete -->|是| Success["✓ 报告生成完成
+    约06:15"]
+    Complete -->|否| Retry{"重试次数
+    < 3?"}
 
     Retry -->|是| Coordinator
-    Retry -->|否| Error[✗ 发送失败告警<br/>通知管理员]
+    Retry -->|否| Error["✗ 发送失败告警
+    通知管理员"]
 
     Success --> End([结束])
     Error --> End
@@ -88,19 +108,27 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-    A[触发器] --> B[Individual<br/>Analysis Agent]
+    A[触发器] --> B[Individual
+Analysis Agent]
 
-    B --> C1[MCP: get_user_tasks<br/>昨日任务]
-    B --> C2[MCP: get_user_tasks<br/>今日任务]
-    B --> C3[MCP: analyze_workload<br/>工作负载分析]
+    B --> C1[MCP: get_user_tasks
+昨日任务]
+    B --> C2[MCP: get_user_tasks
+今日任务]
+    B --> C3[MCP: analyze_workload
+工作负载分析]
 
-    C1 --> D[PostgreSQL<br/>Coding数据库]
+    C1 --> D[PostgreSQL
+Coding数据库]
     C2 --> D
     C3 --> D
 
-    D --> E1[昨日完成任务列表<br/>耗时统计]
-    D --> E2[今日计划任务<br/>优先级排序]
-    D --> E3[工作负载趋势<br/>完成率分析]
+    D --> E1[昨日完成任务列表
+耗时统计]
+    D --> E2[今日计划任务
+优先级排序]
+    D --> E3[工作负载趋势
+完成率分析]
 
     E1 --> F[AI分析处理]
     E2 --> F
@@ -110,16 +138,18 @@ flowchart LR
     F --> G2[生成建议]
     F --> G3[计算健康度]
 
-    G1 --> H[StandupReport<br/>JSON]
+    G1 --> H[StandupReport
+JSON]
     G2 --> H
     G3 --> H
 
-    H --> I[Handlebars<br/>模板渲染]
+    H --> I[Handlebars
+模板渲染]
 
     I --> J[HTML邮件]
-    J --> K[Nodemailer<br/>SMTP发送]
-
-    K --> L[user@company.com]
+    J --> K[Nodemailer
+SMTP发送]
+    K --> L[cn.wilmar-intl.com]
 
     style B fill:#DDA0DD
     style D fill:#87CEEB
@@ -133,16 +163,23 @@ flowchart LR
 
 ```mermaid
 flowchart TB
-    Start[Department<br/>Aggregator Agent] --> GetMembers[MCP: get_team_members<br/>获取团队成员列表]
+    Start[Department
+Aggregator Agent] --> GetMembers[MCP: get_team_members
+获取团队成员列表]
 
-    GetMembers --> MemberList[成员列表<br/>user1, user2, ..., user10]
+    GetMembers --> MemberList[成员列表
+user1, user2, ..., user10]
 
     MemberList --> Parallel{并行调用}
 
-    Parallel --> Agent1[Individual Agent<br/>分析 user1]
-    Parallel --> Agent2[Individual Agent<br/>分析 user2]
-    Parallel --> Agent3[Individual Agent<br/>分析 ...]
-    Parallel --> Agent4[Individual Agent<br/>分析 user10]
+    Parallel --> Agent1[Individual Agent
+分析 user1]
+    Parallel --> Agent2[Individual Agent
+分析 user2]
+    Parallel --> Agent3[Individual Agent
+分析 ...]
+    Parallel --> Agent4[Individual Agent
+分析 user10]
 
     Agent1 --> Report1[StandupReport 1]
     Agent2 --> Report2[StandupReport 2]
@@ -154,18 +191,24 @@ flowchart TB
     Report3 --> Aggregate
     Report4 --> Aggregate
 
-    Start --> GetTasks[MCP: get_team_tasks<br/>获取团队任务]
+    Start --> GetTasks[MCP: get_team_tasks
+获取团队任务]
     GetTasks --> TeamTasks[团队任务数据]
     TeamTasks --> Aggregate
 
-    Start --> GetWorkload[MCP: analyze_workload<br/>团队负载分析]
+    Start --> GetWorkload[MCP: analyze_workload
+团队负载分析]
     GetWorkload --> WorkloadData[负载统计数据]
     WorkloadData --> Aggregate
 
-    Aggregate --> Calc1[计算团队指标<br/>完成率/速度/工时]
-    Aggregate --> Calc2[评估成员健康度<br/>识别风险成员]
-    Aggregate --> Calc3[识别风险项<br/>阻塞/超负荷/延期]
-    Aggregate --> Calc4[提取团队亮点<br/>优秀表现/里程碑]
+    Aggregate --> Calc1[计算团队指标
+完成率/速度/工时]
+    Aggregate --> Calc2[评估成员健康度
+识别风险成员]
+    Aggregate --> Calc3[识别风险项
+阻塞/超负荷/延期]
+    Aggregate --> Calc4[提取团队亮点
+优秀表现/里程碑]
 
     Calc1 --> Summary[DepartmentSummary]
     Calc2 --> Summary
@@ -196,7 +239,8 @@ flowchart LR
     Tool2 -->|是| Repo2[Task + Team Repository]
     Tool3 -->|是| Repo3[Analytics Service]
 
-    Repo1 --> Cache{Redis<br/>缓存命中?}
+    Repo1 --> Cache{Redis
+缓存命中?}
     Repo2 --> Cache
     Repo3 --> Cache
 
@@ -223,9 +267,11 @@ flowchart LR
 
 ```mermaid
 flowchart TB
-    Start[生成报告完成] --> Queue[邮件发送队列<br/>Bull Queue]
+    Start[生成报告完成] --> Queue[邮件发送队列
+Bull Queue]
 
-    Queue --> Batch{批量发送<br/>20封/批}
+    Queue --> Batch{批量发送
+20封/批}
 
     Batch --> Email1[邮件1]
     Batch --> Email2[邮件2]
@@ -238,19 +284,24 @@ flowchart TB
     Template --> HTML[生成HTML]
     HTML --> Text[生成纯文本]
 
-    Text --> SMTP[Nodemailer<br/>SMTP连接]
+    Text --> SMTP[Nodemailer
+SMTP连接]
 
     SMTP --> Send{发送}
 
-    Send -->|成功| LogSuccess[记录成功日志<br/>email_logs表]
-    Send -->|失败| CheckRetry{重试次数<br/>&lt; 3?}
+    Send -->|成功| LogSuccess[记录成功日志
+email_logs表]
+    Send -->|失败| CheckRetry{重试次数
+< 3?}
 
     CheckRetry -->|是| Delay[延迟5秒]
     Delay --> SMTP
 
-    CheckRetry -->|否| LogFail[记录失败日志<br/>发送告警]
+    CheckRetry -->|否| LogFail[记录失败日志
+发送告警]
 
-    LogSuccess --> RateLimit{速率检查<br/>100封/分钟}
+    LogSuccess --> RateLimit{速率检查
+100封/分钟}
 
     RateLimit -->|未超限| NextBatch{还有下一批?}
     RateLimit -->|超限| Wait[等待...]
@@ -275,7 +326,8 @@ flowchart TB
 flowchart TB
     Start([系统启动]) --> Init[初始化Scheduler Service]
 
-    Init --> RegisterCron[注册Cron任务<br/>0 6 * * *]
+    Init --> RegisterCron[注册Cron任务
+0 6 * * *]
 
     RegisterCron --> Wait[等待触发...]
 
@@ -283,16 +335,23 @@ flowchart TB
 
     Trigger --> Log1[记录开始时间]
 
-    Log1 --> LoadConfig[加载配置<br/>批次大小/并发数]
+    Log1 --> LoadConfig[加载配置
+批次大小/并发数]
 
-    LoadConfig --> FetchUsers[查询活跃用户<br/>SELECT * FROM users<br/>WHERE active=true]
+    LoadConfig --> FetchUsers[查询活跃用户
+SELECT * FROM users
+WHERE active=true]
 
-    FetchUsers --> FetchTeams[查询所有团队<br/>SELECT * FROM teams]
+    FetchUsers --> FetchTeams[查询所有团队
+SELECT * FROM teams]
 
-    FetchTeams --> Split1{用户分批<br/>10个/批}
-    FetchTeams --> Split2{团队分批<br/>5个/批}
+    FetchTeams --> Split1{用户分批
+10个/批}
+    FetchTeams --> Split2{团队分批
+5个/批}
 
-    Split1 --> ProcessBatch1[处理用户批次1<br/>并发调用Agent]
+    Split1 --> ProcessBatch1[处理用户批次1
+并发调用Agent]
     Split1 --> ProcessBatch2[处理用户批次2]
     Split1 --> ProcessBatch3[处理用户批次...]
 
@@ -313,22 +372,26 @@ flowchart TB
     Dept1 --> EmailQueue2[加入邮件队列]
     Dept2 --> EmailQueue2
 
-    EmailQueue1 --> SendEmails[发送所有邮件<br/>含速率限制]
+    EmailQueue1 --> SendEmails[发送所有邮件
+含速率限制]
     EmailQueue2 --> SendEmails
 
     SendEmails --> Stats[统计执行结果]
 
-    Stats --> Report[生成执行报告<br/>成功数/失败数/耗时]
+    Stats --> Report[生成执行报告
+成功数/失败数/耗时]
 
     Report --> Notify{有失败?}
 
-    Notify -->|是| Alert[发送告警<br/>给管理员]
+    Notify -->|是| Alert[发送告警
+给管理员]
     Notify -->|否| LogSuccess[记录成功日志]
 
     Alert --> Cleanup
     LogSuccess --> Cleanup[清理临时数据]
 
-    Cleanup --> End([结束<br/>约06:15])
+    Cleanup --> End([结束
+约06:15])
 
     End --> Wait
 
@@ -361,17 +424,21 @@ flowchart TB
         end
 
         subgraph PostgreSQL Container
-            DB[(PostgreSQL<br/>Coding Data)]
+            DB[(PostgreSQL
+Coding Data)]
         end
 
         subgraph Redis Container
-            Cache[(Redis<br/>Cache + Queue)]
+            Cache[(Redis
+Cache + Queue)]
         end
     end
 
     subgraph External
-        SMTP[SMTP Server<br/>企业邮箱]
-        Claude[Claude API<br/>Anthropic]
+        SMTP[SMTP Server
+企业邮箱]
+        Claude[Claude API
+Anthropic]
     end
 
     Scheduler --> Coordinator
@@ -479,9 +546,9 @@ flowchart TB
 
     CatchError --> ErrorType{错误类型}
 
-    ErrorType -->|网络超时| Retry1{重试 &lt; 3?}
-    ErrorType -->|MCP调用失败| Retry2{重试 &lt; 3?}
-    ErrorType -->|邮件发送失败| Retry3{重试 &lt; 3?}
+    ErrorType -->|网络超时| Retry1{重试 < 3?}
+    ErrorType -->|MCP调用失败| Retry2{重试 < 3?}
+    ErrorType -->|邮件发送失败| Retry3{重试 < 3?}
     ErrorType -->|数据库错误| LogCritical[记录严重错误]
     ErrorType -->|其他错误| LogError[记录错误]
 
