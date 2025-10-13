@@ -48,43 +48,59 @@ flowchart LR
 
 ```mermaid
 graph TB
-    subgraph Trigger["触发层 Trigger Layer"]
-        Cron[定时调度器 Cron Scheduler 每天06:00]
-    end
-
-    subgraph Coordination["协调层 Coordination Layer - A2A Protocol"]
-        Master[Master Coordinator 任务协调与分发]
-        A2A[A2A协议层 消息路由/追踪/重试]
-    end
-
-    subgraph AgentLayer["Agent层 Agent Layer"]
+    subgraph Row1["第一层架构"]
         direction LR
-        IA[Individual Agent 个人数据分析 ✅MVP]
-        DA[Department Agent 团队数据聚合 ✅MVP]
-        RA[Report Agent 迭代测试报告 📋Phase2]
+        subgraph Trigger["触发层 Trigger Layer"]
+            Cron[定时调度器<br/>Cron Scheduler<br/>每天06:00]
+        end
 
-        IA_Cap[昨日工作分析 今日计划生成 风险识别]
-        DA_Cap[成员数据聚合 团队指标计算 异常预警]
-        RA_Cap[测试用例统计 缺陷分析 质量评分]
+        subgraph Coordination["协调层 Coordination Layer - A2A Protocol"]
+            Master[Master Coordinator<br/>任务协调与分发]
+            A2A[A2A协议层<br/>消息路由/追踪/重试]
+        end
+
+        subgraph AgentLayer["Agent层 Agent Layer"]
+            direction TB
+            Agents[" "]
+            style Agents fill:none,stroke:none
+            IA[Individual Agent<br/>个人数据分析<br/>✅MVP]
+            DA[Department Agent<br/>团队数据聚合<br/>✅MVP]
+            RA[Report Agent<br/>迭代测试报告<br/>📋Phase2]
+
+            IA_Cap[昨日工作分析<br/>今日计划生成<br/>风险识别]
+            DA_Cap[成员数据聚合<br/>团队指标计算<br/>异常预警]
+            RA_Cap[测试用例统计<br/>缺陷分析<br/>质量评分]
+        end
     end
 
-    subgraph DataAccess["数据访问层 Data Access Layer - MCP"]
-        MCP[MCP Server Model Context Protocol 统一数据访问接口]
-
-        T1[get_user_tasks 获取用户任务]
-        T2[get_team_tasks 获取团队任务]
-        T3[get_team_members 获取团队成员]
-        T4[analyze_workload 工作负载分析]
-        T5[get_iteration_data 获取迭代数据]
-        T6[get_test_cases 获取测试用例]
-        T7[get_bugs 获取缺陷数据]
-    end
-
-    subgraph Infrastructure["基础设施层 Infrastructure Layer"]
+    subgraph Row2["第二层架构"]
         direction LR
-        DB[(MySQL Database Coding项目数据)]
-        SMTP[SMTP Server 邮件服务]
-        QWEN[Aliyun API AI分析能力 QWEN]
+        subgraph DataAccess["数据访问层 Data Access Layer - MCP"]
+            direction TB
+            MCP[MCP Server<br/>Model Context Protocol<br/>统一数据访问接口]
+
+            subgraph MCPTools["MCP Tools"]
+                direction LR
+                T1[get_user_tasks<br/>获取用户任务]
+                T2[get_team_tasks<br/>获取团队任务]
+                T3[get_team_members<br/>获取团队成员]
+                T4[analyze_workload<br/>工作负载分析]
+            end
+
+            subgraph MCPTools2["MCP Tools Phase2"]
+                direction LR
+                T5[get_iteration_data<br/>获取迭代数据]
+                T6[get_test_cases<br/>获取测试用例]
+                T7[get_bugs<br/>获取缺陷数据]
+            end
+        end
+
+        subgraph Infrastructure["基础设施层 Infrastructure"]
+            direction TB
+            DB[(MySQL Database<br/>Coding项目数据)]
+            SMTP[SMTP Server<br/>邮件服务]
+            QWEN[Aliyun API<br/>AI分析能力<br/>QWEN]
+        end
     end
 
     Cron -->|触发| Master
@@ -119,6 +135,9 @@ graph TB
     DA -.- DA_Cap
     RA -.- RA_Cap
 
+    style Row1 fill:none,stroke:none
+    style Row2 fill:none,stroke:none
+    style Agents fill:none,stroke:none
     style Cron fill:#90EE90
     style Master fill:#FFB6C1
     style A2A fill:#FF69B4
