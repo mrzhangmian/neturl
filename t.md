@@ -52,75 +52,103 @@ graph TB
         Cron[定时调度器<br/>Cron Scheduler<br/>每天06:00]
     end
 
-    subgraph "协调层 Coordination Layer"
-        Master[Master Coordinator<br/>任务协调与分发]
+    subgraph "协调层 Coordination Layer - A2A Protocol"
+        Master[Master Coordinator<br/>任务协调与分发<br/>Agent间通信管理]
+        A2A[A2A协议层<br/>Agent-to-Agent<br/>消息路由/追踪/重试]
     end
 
     subgraph "Agent层 Agent Layer"
-        IA[Individual Agent<br/>个人数据分析]
-        DA[Department Agent<br/>团队数据聚合]
-        RA[Report Agent<br/>报告生成<br/>Phase 2]
+        IA[Individual Agent<br/>个人数据分析<br/>✅ MVP]
+        DA[Department Agent<br/>团队数据聚合<br/>✅ MVP]
+        RA[Report Agent<br/>迭代测试报告<br/>📋 Phase 2]
+
+        subgraph "Agent能力"
+            IA_Cap[昨日工作分析<br/>今日计划生成<br/>风险识别]
+            DA_Cap[成员数据聚合<br/>团队指标计算<br/>异常预警]
+            RA_Cap[测试用例统计<br/>缺陷分析<br/>质量评分]
+        end
     end
 
-    subgraph "数据访问层 Data Access Layer"
-        MCP[MCP Server<br/>Model Context Protocol]
+    subgraph "数据访问层 Data Access Layer - MCP"
+        MCP[MCP Server<br/>Model Context Protocol<br/>统一数据访问接口]
 
-        subgraph "MCP Tools"
-            T1[get_user_tasks]
-            T2[get_team_tasks]
-            T3[get_team_members]
-            T4[analyze_workload]
+        subgraph "MCP Tools - MVP"
+            T1[get_user_tasks<br/>获取用户任务]
+            T2[get_team_tasks<br/>获取团队任务]
+            T3[get_team_members<br/>获取团队成员]
+            T4[analyze_workload<br/>工作负载分析]
+        end
+
+        subgraph "MCP Tools - Phase 2"
+            T5[get_iteration_data<br/>获取迭代数据]
+            T6[get_test_cases<br/>获取测试用例]
+            T7[get_bugs<br/>获取缺陷数据]
         end
     end
 
     subgraph "基础设施层 Infrastructure Layer"
-        DB[(MySQL Database<br/>Coding项目数据)]
-        Cache[(Redis Cache<br/>缓存+队列)]
-        SMTP[SMTP Server<br/>邮件服务]
+        DB[(MySQL Database<br/>Coding项目数据<br/>任务/用户/团队/迭代)]
+        Cache[(Redis Cache<br/>缓存+消息队列<br/>A2A消息缓存)]
+        SMTP[SMTP Server<br/>邮件服务<br/>批量发送+重试]
     end
 
     subgraph "外部服务 External Services"
-        Claude[Claude API<br/>AI分析能力]
-        Email[Email Client<br/>用户邮箱]
+        阿里云百炼[Aliyun API<br/>AI分析能力<br/>Anthropic]
+        Email[Email Client<br/>用户邮箱<br/>个人/Leader]
     end
 
     Cron -->|触发| Master
-    Master -->|调度| IA
-    Master -->|调度| DA
-    Master -.->|未来| RA
+    Master <-->|A2A消息| A2A
 
-    IA -->|调用| MCP
-    DA -->|调用| MCP
-    RA -.->|调用| MCP
+    A2A -->|调度| IA
+    A2A -->|调度| DA
+    A2A -.->|未来调度| RA
+
+    IA -.->|并行协作| DA
+    DA -.->|请求成员数据| IA
+
+    IA -->|MCP调用| MCP
+    DA -->|MCP调用| MCP
+    RA -.->|MCP调用| MCP
 
     MCP --> T1
     MCP --> T2
     MCP --> T3
     MCP --> T4
+    MCP -.-> T5
+    MCP -.-> T6
+    MCP -.-> T7
 
-    T1 -->|查询| DB
-    T2 -->|查询| DB
-    T3 -->|查询| DB
-    T4 -->|查询| DB
+    T1 & T2 & T3 & T4 -->|查询| DB
+    T5 & T6 & T7 -.->|查询| DB
 
     MCP -->|缓存| Cache
+    A2A -->|消息队列| Cache
 
-    IA -->|AI调用| Claude
-    DA -->|AI调用| Claude
+    IA & DA & RA -.->|AI调用| Claude
 
-    IA -->|发送邮件| SMTP
-    DA -->|发送邮件| SMTP
+    IA & DA -->|邮件推送| SMTP
+    RA -.->|报告推送| SMTP
 
-    SMTP -->|推送| Email
+    SMTP -->|发送| Email
 
-    Cache -->|队列管理| SMTP
+    IA -.- IA_Cap
+    DA -.- DA_Cap
+    RA -.- RA_Cap
 
     style Cron fill:#90EE90
     style Master fill:#FFB6C1
+    style A2A fill:#FF69B4
     style IA fill:#DDA0DD
     style DA fill:#DDA0DD
     style RA fill:#E0E0E0
+    style IA_Cap fill:#F0E6FF
+    style DA_Cap fill:#F0E6FF
+    style RA_Cap fill:#F5F5F5
     style MCP fill:#F0E68C
+    style T5 fill:#F5F5DC
+    style T6 fill:#F5F5DC
+    style T7 fill:#F5F5DC
     style DB fill:#87CEEB
     style Cache fill:#FFA07A
     style SMTP fill:#FFA07A
@@ -642,30 +670,131 @@ flowchart TB
 ### 1️⃣ 触发层（Trigger Layer）
 - **Cron Scheduler**: 每天早上06:00自动触发任务
 
-### 2️⃣ 协调层（Coordination Layer）
-- **Master Coordinator**: 任务调度、Agent管理、结果聚合
+### 2️⃣ 协调层（Coordination Layer - A2A Protocol）
+- **Master Coordinator**:
+  - 任务调度与分发
+  - Agent生命周期管理
+  - 结果聚合与格式化
+
+- **A2A协议层**（核心创新点）:
+  - **Agent-to-Agent通信协议**
+  - 消息路由与转发
+  - 请求追踪（trace_id）
+  - 失败重试机制
+  - 并行/串行调度控制
+  - 消息持久化（Redis）
+
+**A2A消息示例**:
+```json
+{
+  "protocol": "A2A/1.0",
+  "from": "department_agent",
+  "to": "individual_agent",
+  "action": "analyze_member",
+  "trace_id": "uuid-123"
+}
+```
 
 ### 3️⃣ Agent层（Agent Layer）
-- **Individual Agent**: 个人数据分析（MVP）
-- **Department Agent**: 团队数据聚合（MVP）
-- **Report Agent**: 报告生成（Phase 2扩展）
 
-### 4️⃣ 数据访问层（Data Access Layer）
-- **MCP Server**: 统一的数据访问接口
-- **MCP Tools**:
-  - `get_user_tasks` - 获取用户任务
-  - `get_team_tasks` - 获取团队任务
-  - `get_team_members` - 获取团队成员
-  - `analyze_workload` - 分析工作负载
+#### ✅ MVP阶段
+- **Individual Agent**: 个人数据分析
+  - 昨日工作分析（完成任务、耗时统计）
+  - 今日计划生成（优先级排序）
+  - 风险识别（阻塞项、延期预警）
+  - 输出：`StandupReport` JSON
+
+- **Department Agent**: 团队数据聚合
+  - 成员数据聚合（通过A2A调用Individual Agent）
+  - 团队指标计算（完成率、速度、工时）
+  - 异常预警（超负荷、阻塞、延期）
+  - 输出：`DepartmentSummary` JSON
+
+#### 📋 Phase 2扩展
+- **Report Agent**: 迭代测试报告生成
+  - 测试用例统计（执行率、通过率）
+  - 缺陷分析（按严重程度、模块分布）
+  - 质量评分（基于多维度指标）
+  - 趋势预测（基于历史数据）
+  - 输出：`TestReport` Markdown/PDF
+
+### 4️⃣ 数据访问层（Data Access Layer - MCP）
+- **MCP Server**: Model Context Protocol统一数据访问接口
+
+#### MCP Tools - MVP阶段
+  - `get_user_tasks` - 获取用户任务（支持日期范围、状态过滤）
+  - `get_team_tasks` - 获取团队任务（支持分组聚合）
+  - `get_team_members` - 获取团队成员列表
+  - `analyze_workload` - 工作负载分析（统计+趋势）
+
+#### MCP Tools - Phase 2扩展
+  - `get_iteration_data` - 获取迭代数据（包含目标、任务、指标）
+  - `get_test_cases` - 获取测试用例（执行状态、覆盖率）
+  - `get_bugs` - 获取缺陷数据（严重程度、修复状态）
+
+**MCP优势**:
+- 统一的数据访问接口
+- 自动缓存优化
+- 参数验证
+- 错误处理
+- 便于扩展新工具
 
 ### 5️⃣ 基础设施层（Infrastructure Layer）
-- **MySQL**: Coding项目数据存储
-- **Redis**: 缓存 + 消息队列
-- **SMTP**: 邮件发送服务
+- **MySQL Database**:
+  - Coding项目数据存储
+  - 表结构：tasks、users、teams、iterations、test_cases、bugs
+
+- **Redis Cache**:
+  - 数据缓存（减少DB压力）
+  - 消息队列（A2A消息传递）
+  - 邮件发送队列
+  - 会话状态存储
+
+- **SMTP Server**:
+  - 邮件发送服务
+  - 批量发送（20封/批）
+  - 速率限制（100封/分钟）
+  - 失败重试（最多3次）
 
 ### 🌐 外部服务（External Services）
-- **Claude API**: 提供AI分析能力
-- **Email Client**: 用户接收邮件的客户端
+- **Claude API** (Anthropic):
+  - 提供AI分析能力
+  - 自然语言生成
+  - 数据洞察提取
+  - 建议生成
+
+- **Email Client**:
+  - 用户接收邮件的客户端
+  - 个人用户：每日站会报告
+  - Leader：团队汇总报告
+  - 测试团队：迭代测试报告（Phase 2）
+
+---
+
+## 关键特性
+
+### 🔄 A2A协议的优势
+1. **解耦合**: Agent之间通过标准协议通信，易于扩展
+2. **可追踪**: 每个请求都有trace_id，便于问题排查
+3. **高可用**: 支持失败重试和降级策略
+4. **并行化**: Department Agent可并行调用多个Individual Agent
+
+### 📊 Phase 2扩展能力
+1. **迭代测试报告**:
+   - 自动生成测试报告（每个迭代结束时）
+   - 测试覆盖率分析
+   - 缺陷趋势预测
+   - 质量度量看板
+
+2. **数据可视化**:
+   - 集成ECharts生成图表
+   - 趋势曲线、饼图、雷达图
+   - 导出为PDF/HTML格式
+
+3. **智能建议**:
+   - 基于历史数据的AI建议
+   - 资源分配优化
+   - 风险预测预警
 
 ---
 
