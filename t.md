@@ -38,7 +38,7 @@ flowchart TB
     EmailService1 --> Template1["个人报告模板
     individual-daily.hbs"]
     Template1 --> SendEmail1["发送邮件到
-    user@company.com"]
+    user@cn.wilmar-intl.com"]
 
     SendEmail1 --> LogEmail1[记录发送日志]
 
@@ -70,7 +70,7 @@ flowchart TB
     EmailService2 --> Template2["Leader报告模板
     leader-daily.hbs"]
     Template2 --> SendEmail2["发送邮件到
-    leader@company.com"]
+    leader@cn.wilmar-intl.com"]
 
     SendEmail2 --> LogEmail2[记录发送日志]
 
@@ -118,7 +118,7 @@ Analysis Agent]
     B --> C3[MCP: analyze_workload
 工作负载分析]
 
-    C1 --> D[PostgreSQL
+    C1 --> D[MySQL
 Coding数据库]
     C2 --> D
     C3 --> D
@@ -149,7 +149,7 @@ JSON]
     I --> J[HTML邮件]
     J --> K[Nodemailer
 SMTP发送]
-    K --> L[cn.wilmar-intl.com]
+    K --> L[user@cn.wilmar-intl.com]
 
     style B fill:#DDA0DD
     style D fill:#87CEEB
@@ -245,7 +245,7 @@ flowchart LR
     Repo3 --> Cache
 
     Cache -->|命中| Return1[返回缓存数据]
-    Cache -->|未命中| DB[(PostgreSQL)]
+    Cache -->|未命中| DB[(MySQL)]
 
     DB --> Query[执行SQL查询]
     Query --> Process[数据处理]
@@ -423,8 +423,8 @@ flowchart TB
             MCP[MCP Server]
         end
 
-        subgraph PostgreSQL Container
-            DB[(PostgreSQL
+        subgraph MySQL Container
+            DB[(MySQL
 Coding Data)]
         end
 
@@ -484,7 +484,7 @@ sequenceDiagram
     participant IA as Individual Agent
     participant DA as Department Agent
     participant M as MCP Server
-    participant DB as PostgreSQL
+    participant DB as MySQL
     participant E as Email Service
     participant U as User
 
